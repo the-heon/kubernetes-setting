@@ -18,6 +18,22 @@ spec:
         - name: event-bus-gateway
           image: daev681/daev681:event-bus-gateway
           imagePullPolicy: Always
+          env:
+            - name: REDIS_ADDR
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: redis-addr
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: redis-password
+            - name: REDIS_DB
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: redis-db
           ports:
             - name: http
               containerPort: 8080
