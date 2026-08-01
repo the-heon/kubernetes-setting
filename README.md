@@ -14,6 +14,12 @@ kubectl apply -f app-secrets.example.yaml
 ```bash
 kubectl apply -f api-server.yaml
 kubectl apply -f api-server-service.yaml
+kubectl apply -f auth-server.yaml
+kubectl apply -f auth-server-service.yaml
+kubectl apply -f matchmaking-server.yaml
+kubectl apply -f matchmaking-server-service.yaml
+kubectl apply -f session-orchestrator.yaml
+kubectl apply -f session-orchestrator-service.yaml
 kubectl apply -f api-gateway.yaml
 kubectl apply -f api-gateway-service.yaml
 kubectl apply -f api-gateway-hpa.yaml
@@ -33,8 +39,11 @@ kubectl apply -f react-nginx-ingress.yaml
 Prometheus scrapes:
 
 1. `api-server-service:8080/actuator/prometheus`
-2. `api-gateway-service:80/readyz`
-3. `realtime-server-service:8081/metrics`
+2. `auth-server-service:8080/metrics`
+3. `matchmaking-server-service:8080/metrics`
+4. `session-orchestrator-service:8080/metrics`
+5. `api-gateway-service:80/readyz`
+6. `realtime-server-service:8081/metrics`
 
 Deploy:
 
@@ -63,6 +72,8 @@ realtime-server는 `X-Api-Key`를 사용해 다음 API를 주기 호출합니다
 
 api-gateway는 운영 요약(`/api/ops/summary`)에 realtime 상태를 합치기 위해
 `REALTIME_SERVER_HOST`, `REALTIME_SERVER_HEALTH_PORT`를 사용해 `/health`를 조회합니다.
+신규로 `AUTH_HEALTH_*`, `MATCHMAKING_HEALTH_*`, `SESSION_ORCHESTRATOR_HEALTH_*`를 사용해
+운영 요약에 auth/matchmaking/orchestrator 상태를 함께 집계합니다.
 
 ## Resilience Controls
 
