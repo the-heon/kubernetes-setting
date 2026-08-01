@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quest-scenario-server
+  labels:
+    app: quest-scenario-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: quest-scenario-server
+  template:
+    metadata:
+      labels:
+        app: quest-scenario-server
+    spec:
+      containers:
+        - name: quest-scenario-server
+          image: daev681/daev681:quest-scenario-server
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      imagePullSecrets:
+        - name: my-secret
