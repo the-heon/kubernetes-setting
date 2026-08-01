@@ -46,6 +46,21 @@ kubectl apply -f ranking-stats-server-service.yaml
 kubectl apply -f ranking-stats-server-hpa.yaml
 kubectl apply -f ranking-stats-server-pdb.yaml
 kubectl apply -f ranking-stats-server-networkpolicy.yaml
+kubectl apply -f event-bus-gateway.yaml
+kubectl apply -f event-bus-gateway-service.yaml
+kubectl apply -f event-bus-gateway-hpa.yaml
+kubectl apply -f event-bus-gateway-pdb.yaml
+kubectl apply -f event-bus-gateway-networkpolicy.yaml
+kubectl apply -f cache-proxy-server.yaml
+kubectl apply -f cache-proxy-server-service.yaml
+kubectl apply -f cache-proxy-server-hpa.yaml
+kubectl apply -f cache-proxy-server-pdb.yaml
+kubectl apply -f cache-proxy-server-networkpolicy.yaml
+kubectl apply -f audit-trail-server.yaml
+kubectl apply -f audit-trail-server-service.yaml
+kubectl apply -f audit-trail-server-hpa.yaml
+kubectl apply -f audit-trail-server-pdb.yaml
+kubectl apply -f audit-trail-server-networkpolicy.yaml
 kubectl apply -f api-gateway.yaml
 kubectl apply -f api-gateway-service.yaml
 kubectl apply -f api-gateway-hpa.yaml
@@ -71,8 +86,11 @@ Prometheus scrapes:
 5. `economy-server-service:8080/metrics`
 6. `liveops-config-server-service:8080/metrics`
 7. `ranking-stats-server-service:8080/metrics`
-8. `api-gateway-service:80/readyz`
-9. `realtime-server-service:8081/metrics`
+8. `event-bus-gateway-service:8080/metrics`
+9. `cache-proxy-server-service:8080/metrics`
+10. `audit-trail-server-service:8080/metrics`
+11. `api-gateway-service:80/readyz`
+12. `realtime-server-service:8081/metrics`
 
 Deploy:
 
@@ -105,6 +123,8 @@ api-gateway는 운영 요약(`/api/ops/summary`)에 realtime 상태를 합치기
 운영 요약에 auth/matchmaking/orchestrator 상태를 함께 집계합니다.
 추가로 `ECONOMY_HEALTH_*`, `LIVEOPS_HEALTH_*`, `RANKING_HEALTH_*`를 사용해
 economy/liveops/ranking 상태도 함께 집계합니다.
+추가로 `EVENTBUS_HEALTH_*`, `CACHE_HEALTH_*`, `AUDIT_HEALTH_*`를 사용해
+event-bus/cache/audit 상태도 함께 집계합니다.
 
 ## Resilience Controls
 
@@ -130,3 +150,12 @@ economy/liveops/ranking 상태도 함께 집계합니다.
 20. `economy-server-networkpolicy.yaml`: economy ingress/egress 허용 범위 제한
 21. `liveops-config-server-networkpolicy.yaml`: liveops ingress/egress 허용 범위 제한
 22. `ranking-stats-server-networkpolicy.yaml`: ranking ingress/egress 허용 범위 제한
+23. `event-bus-gateway-hpa.yaml`: event bus CPU 기반 자동 스케일링
+24. `cache-proxy-server-hpa.yaml`: cache CPU/메모리 기반 자동 스케일링
+25. `audit-trail-server-hpa.yaml`: audit CPU 기반 자동 스케일링
+26. `event-bus-gateway-pdb.yaml`: 노드 드레인 시 event bus 최소 1개 Pod 유지
+27. `cache-proxy-server-pdb.yaml`: 노드 드레인 시 cache 최소 1개 Pod 유지
+28. `audit-trail-server-pdb.yaml`: 노드 드레인 시 audit 최소 1개 Pod 유지
+29. `event-bus-gateway-networkpolicy.yaml`: event bus ingress/egress 허용 범위 제한
+30. `cache-proxy-server-networkpolicy.yaml`: cache ingress/egress 허용 범위 제한
+31. `audit-trail-server-networkpolicy.yaml`: audit ingress/egress 허용 범위 제한
