@@ -61,6 +61,18 @@ spec:
               value: "http://ranking-stats-server-service"
             - name: RANKING_HEALTH_PORT
               value: "8080"
+            - name: EVENTBUS_HEALTH_HOST
+              value: "http://event-bus-gateway-service"
+            - name: EVENTBUS_HEALTH_PORT
+              value: "8080"
+            - name: CACHE_HEALTH_HOST
+              value: "http://cache-proxy-server-service"
+            - name: CACHE_HEALTH_PORT
+              value: "8080"
+            - name: AUDIT_HEALTH_HOST
+              value: "http://audit-trail-server-service"
+            - name: AUDIT_HEALTH_PORT
+              value: "8080"
           livenessProbe:
             httpGet:
               path: /healthz

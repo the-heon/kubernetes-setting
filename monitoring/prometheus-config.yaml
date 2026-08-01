@@ -44,6 +44,21 @@ data:
         static_configs:
           - targets: ["ranking-stats-server-service:8080"]
 
+      - job_name: "event-bus-gateway"
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["event-bus-gateway-service:8080"]
+
+      - job_name: "cache-proxy-server"
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["cache-proxy-server-service:8080"]
+
+      - job_name: "audit-trail-server"
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["audit-trail-server-service:8080"]
+
       - job_name: "api-gateway-readiness"
         metrics_path: /readyz
         static_configs:
