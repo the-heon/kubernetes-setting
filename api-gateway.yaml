@@ -49,6 +49,18 @@ spec:
               value: "http://session-orchestrator-service"
             - name: SESSION_ORCHESTRATOR_HEALTH_PORT
               value: "8080"
+            - name: ECONOMY_HEALTH_HOST
+              value: "http://economy-server-service"
+            - name: ECONOMY_HEALTH_PORT
+              value: "8080"
+            - name: LIVEOPS_HEALTH_HOST
+              value: "http://liveops-config-server-service"
+            - name: LIVEOPS_HEALTH_PORT
+              value: "8080"
+            - name: RANKING_HEALTH_HOST
+              value: "http://ranking-stats-server-service"
+            - name: RANKING_HEALTH_PORT
+              value: "8080"
           livenessProbe:
             httpGet:
               path: /healthz
