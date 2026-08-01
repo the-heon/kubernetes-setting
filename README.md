@@ -51,3 +51,8 @@ kubectl apply -f monitoring/prometheus-service.yaml
 3. realtime-server:
 	- liveness: `/health`
 	- readiness: `/health`
+
+realtime-server는 `X-Api-Key`를 사용해 다음 API를 주기 호출합니다.
+
+1. `POST /api/game-servers/heartbeat`
+2. `GET /api/game-servers/traffic-policy`
