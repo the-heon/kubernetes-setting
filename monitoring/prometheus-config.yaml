@@ -29,6 +29,21 @@ data:
         static_configs:
           - targets: ["session-orchestrator-service:8080"]
 
+      - job_name: "economy-server"
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["economy-server-service:8080"]
+
+      - job_name: "liveops-config-server"
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["liveops-config-server-service:8080"]
+
+      - job_name: "ranking-stats-server"
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["ranking-stats-server-service:8080"]
+
       - job_name: "api-gateway-readiness"
         metrics_path: /readyz
         static_configs:

@@ -31,6 +31,21 @@ kubectl apply -f session-orchestrator-service.yaml
 kubectl apply -f session-orchestrator-hpa.yaml
 kubectl apply -f session-orchestrator-pdb.yaml
 kubectl apply -f session-orchestrator-networkpolicy.yaml
+kubectl apply -f economy-server.yaml
+kubectl apply -f economy-server-service.yaml
+kubectl apply -f economy-server-hpa.yaml
+kubectl apply -f economy-server-pdb.yaml
+kubectl apply -f economy-server-networkpolicy.yaml
+kubectl apply -f liveops-config-server.yaml
+kubectl apply -f liveops-config-server-service.yaml
+kubectl apply -f liveops-config-server-hpa.yaml
+kubectl apply -f liveops-config-server-pdb.yaml
+kubectl apply -f liveops-config-server-networkpolicy.yaml
+kubectl apply -f ranking-stats-server.yaml
+kubectl apply -f ranking-stats-server-service.yaml
+kubectl apply -f ranking-stats-server-hpa.yaml
+kubectl apply -f ranking-stats-server-pdb.yaml
+kubectl apply -f ranking-stats-server-networkpolicy.yaml
 kubectl apply -f api-gateway.yaml
 kubectl apply -f api-gateway-service.yaml
 kubectl apply -f api-gateway-hpa.yaml
@@ -53,8 +68,11 @@ Prometheus scrapes:
 2. `auth-server-service:8080/metrics`
 3. `matchmaking-server-service:8080/metrics`
 4. `session-orchestrator-service:8080/metrics`
-5. `api-gateway-service:80/readyz`
-6. `realtime-server-service:8081/metrics`
+5. `economy-server-service:8080/metrics`
+6. `liveops-config-server-service:8080/metrics`
+7. `ranking-stats-server-service:8080/metrics`
+8. `api-gateway-service:80/readyz`
+9. `realtime-server-service:8081/metrics`
 
 Deploy:
 
@@ -85,6 +103,8 @@ api-gateway는 운영 요약(`/api/ops/summary`)에 realtime 상태를 합치기
 `REALTIME_SERVER_HOST`, `REALTIME_SERVER_HEALTH_PORT`를 사용해 `/health`를 조회합니다.
 신규로 `AUTH_HEALTH_*`, `MATCHMAKING_HEALTH_*`, `SESSION_ORCHESTRATOR_HEALTH_*`를 사용해
 운영 요약에 auth/matchmaking/orchestrator 상태를 함께 집계합니다.
+추가로 `ECONOMY_HEALTH_*`, `LIVEOPS_HEALTH_*`, `RANKING_HEALTH_*`를 사용해
+economy/liveops/ranking 상태도 함께 집계합니다.
 
 ## Resilience Controls
 
@@ -101,3 +121,12 @@ api-gateway는 운영 요약(`/api/ops/summary`)에 realtime 상태를 합치기
 11. `matchmaking-server-networkpolicy.yaml`: matchmaking ingress/egress 허용 범위 제한
 12. `session-orchestrator-networkpolicy.yaml`: orchestrator ingress/egress 허용 범위 제한
 13. `realtime-server-networkpolicy.yaml`: realtime ingress/egress 허용 범위 제한
+14. `economy-server-hpa.yaml`: economy CPU/메모리 기반 자동 스케일링
+15. `liveops-config-server-hpa.yaml`: liveops CPU 기반 자동 스케일링
+16. `ranking-stats-server-hpa.yaml`: ranking CPU/메모리 기반 자동 스케일링
+17. `economy-server-pdb.yaml`: 노드 드레인 시 economy 최소 1개 Pod 유지
+18. `liveops-config-server-pdb.yaml`: 노드 드레인 시 liveops 최소 1개 Pod 유지
+19. `ranking-stats-server-pdb.yaml`: 노드 드레인 시 ranking 최소 1개 Pod 유지
+20. `economy-server-networkpolicy.yaml`: economy ingress/egress 허용 범위 제한
+21. `liveops-config-server-networkpolicy.yaml`: liveops ingress/egress 허용 범위 제한
+22. `ranking-stats-server-networkpolicy.yaml`: ranking ingress/egress 허용 범위 제한
