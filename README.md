@@ -16,9 +16,13 @@ kubectl apply -f api-server.yaml
 kubectl apply -f api-server-service.yaml
 kubectl apply -f api-gateway.yaml
 kubectl apply -f api-gateway-service.yaml
+kubectl apply -f api-gateway-hpa.yaml
 kubectl apply -f realtime-server-config.yaml
 kubectl apply -f realtime-server.yaml
 kubectl apply -f realtime-server-service.yaml
+kubectl apply -f realtime-server-hpa.yaml
+kubectl apply -f realtime-server-pdb.yaml
+kubectl apply -f realtime-server-networkpolicy.yaml
 kubectl apply -f react-nginx.yaml
 kubectl apply -f react-nginx-service.yaml
 kubectl apply -f react-nginx-ingress.yaml
@@ -59,3 +63,10 @@ realtime-server는 `X-Api-Key`를 사용해 다음 API를 주기 호출합니다
 
 api-gateway는 운영 요약(`/api/ops/summary`)에 realtime 상태를 합치기 위해
 `REALTIME_SERVER_HOST`, `REALTIME_SERVER_HEALTH_PORT`를 사용해 `/health`를 조회합니다.
+
+## Resilience Controls
+
+1. `api-gateway-hpa.yaml`: gateway CPU 기반 자동 스케일링
+2. `realtime-server-hpa.yaml`: realtime CPU/메모리 기반 자동 스케일링
+3. `realtime-server-pdb.yaml`: 노드 드레인 시 최소 1개 Pod 유지
+4. `realtime-server-networkpolicy.yaml`: ingress/egress 허용 범위 제한

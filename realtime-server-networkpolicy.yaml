@@ -1,0 +1,51 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: realtime-server-networkpolicy
+spec:
+  podSelector:
+    matchLabels:
+      app: realtime-server
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Game traffic
+    - ports:
+        - protocol: TCP
+          port: 7777
+    # Health/metrics only from internal observability and gateway pods
+    - from:
+        - podSelector:
+            matchLabels:
+              app: prometheus
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 8081
+  egress:
+    # API gateway and API server for control-plane and token validation
+    - to:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 5000
+    - to:
+        - podSelector:
+            matchLabels:
+              app: api-server
+      ports:
+        - protocol: TCP
+          port: 8080
+    # DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
