@@ -34,3 +34,4 @@ data:
     game_server_version = 0.1.0-k8s
     heartbeat_report_interval_ms = 10000
     control_plane_timeout_ms = 3000
+    policy_refresh_interval_ms = 30000
