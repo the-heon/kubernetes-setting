@@ -19,6 +19,41 @@ spec:
           image: daev681/daev681:api-server  # 빌드된 Docker 이미지 이름
           imagePullPolicy: Always  # 강제로 이미지 다운로드
           ports:
-            - containerPort: 8080  # 애플리케이션이 열어놓은 포트
+            - name: http
+              containerPort: 8080  # 애플리케이션이 열어놓은 포트
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+            - name: HMAC_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: hmac-secret
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: jwt-secret
+            - name: JWT_REFRESH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: jwt-refresh-secret
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
       imagePullSecrets:
         - name: my-secret  # 시크릿 이름을 여기에 지정
