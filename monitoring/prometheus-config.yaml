@@ -14,6 +14,21 @@ data:
         static_configs:
           - targets: ["api-server-service:8080"]
 
+      - job_name: "auth-server"
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["auth-server-service:8080"]
+
+      - job_name: "matchmaking-server"
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["matchmaking-server-service:8080"]
+
+      - job_name: "session-orchestrator"
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["session-orchestrator-service:8080"]
+
       - job_name: "api-gateway-readiness"
         metrics_path: /readyz
         static_configs:
