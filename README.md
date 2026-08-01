@@ -16,6 +16,9 @@ kubectl apply -f api-server.yaml
 kubectl apply -f api-server-service.yaml
 kubectl apply -f api-gateway.yaml
 kubectl apply -f api-gateway-service.yaml
+kubectl apply -f realtime-server-config.yaml
+kubectl apply -f realtime-server.yaml
+kubectl apply -f realtime-server-service.yaml
 kubectl apply -f react-nginx.yaml
 kubectl apply -f react-nginx-service.yaml
 kubectl apply -f react-nginx-ingress.yaml
@@ -27,6 +30,7 @@ Prometheus scrapes:
 
 1. `api-server-service:8080/actuator/prometheus`
 2. `api-gateway-service:80/readyz`
+3. `realtime-server-service:8081/metrics`
 
 Deploy:
 
@@ -44,3 +48,6 @@ kubectl apply -f monitoring/prometheus-service.yaml
 2. api-server:
 	- liveness: `/actuator/health/liveness`
 	- readiness: `/actuator/health/readiness`
+3. realtime-server:
+	- liveness: `/health`
+	- readiness: `/health`

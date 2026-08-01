@@ -18,3 +18,8 @@ data:
         metrics_path: /readyz
         static_configs:
           - targets: ["api-gateway-service:80"]
+
+      - job_name: "realtime-server"
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["realtime-server-service:8081"]

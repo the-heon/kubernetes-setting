@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: realtime-server-config
+data:
+  server.cfg: |
+    port = 7777
+    worker_thread_multiplier = 2
+    tick_interval_ms = 33
+    heartbeat_timeout_ms = 30000
+    max_room_players = 16
+    stats_print_interval_ms = 10000
+    log_file =
+
+    session_server_host = api-server-service
+    session_server_port = 8080
+    auth_worker_count = 4
+    auth_timeout_ms = 3000
+
+    external_host = realtime-server-service
+    max_total_players = 500
+
+    health_server_port = 8081
+
+    max_packet_size = 4096
+    packet_rate_limit_per_sec = 100
+
+    idle_room_timeout_ms = 60000
+    reconnect_window_ms = 30000
+
+    api_gateway_host = api-gateway-service
+    api_gateway_port = 80
+    game_server_api_key =
+    game_server_version = 0.1.0-k8s
+    heartbeat_report_interval_ms = 10000
+    control_plane_timeout_ms = 3000
