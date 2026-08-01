@@ -11,6 +11,20 @@
 kubectl apply -f app-secrets.example.yaml
 ```
 
+## Data Services
+
+```bash
+kubectl apply -f postgres.yaml
+kubectl apply -f postgres-service.yaml
+kubectl apply -f redis.yaml
+kubectl apply -f redis-service.yaml
+```
+
+Data layer split:
+
+1. Redis: `cache-proxy-server`, `event-bus-gateway`
+2. PostgreSQL: `economy-server`, `liveops-config-server`, `ranking-stats-server`, `audit-trail-server`
+
 ## Core Services
 
 ```bash
