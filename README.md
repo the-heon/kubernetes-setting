@@ -4,6 +4,8 @@
 
 1. Create image pull secret (`my-secret`) used by deployments.
 2. Create application secrets from the example file.
+3. Enable Metrics Server for HPA.
+4. Use a CNI that enforces NetworkPolicy.
 
 ```bash
 kubectl apply -f app-secrets.example.yaml
@@ -16,10 +18,19 @@ kubectl apply -f api-server.yaml
 kubectl apply -f api-server-service.yaml
 kubectl apply -f auth-server.yaml
 kubectl apply -f auth-server-service.yaml
+kubectl apply -f auth-server-hpa.yaml
+kubectl apply -f auth-server-pdb.yaml
+kubectl apply -f auth-server-networkpolicy.yaml
 kubectl apply -f matchmaking-server.yaml
 kubectl apply -f matchmaking-server-service.yaml
+kubectl apply -f matchmaking-server-hpa.yaml
+kubectl apply -f matchmaking-server-pdb.yaml
+kubectl apply -f matchmaking-server-networkpolicy.yaml
 kubectl apply -f session-orchestrator.yaml
 kubectl apply -f session-orchestrator-service.yaml
+kubectl apply -f session-orchestrator-hpa.yaml
+kubectl apply -f session-orchestrator-pdb.yaml
+kubectl apply -f session-orchestrator-networkpolicy.yaml
 kubectl apply -f api-gateway.yaml
 kubectl apply -f api-gateway-service.yaml
 kubectl apply -f api-gateway-hpa.yaml
@@ -78,6 +89,15 @@ api-gateway는 운영 요약(`/api/ops/summary`)에 realtime 상태를 합치기
 ## Resilience Controls
 
 1. `api-gateway-hpa.yaml`: gateway CPU 기반 자동 스케일링
-2. `realtime-server-hpa.yaml`: realtime CPU/메모리 기반 자동 스케일링
-3. `realtime-server-pdb.yaml`: 노드 드레인 시 최소 1개 Pod 유지
-4. `realtime-server-networkpolicy.yaml`: ingress/egress 허용 범위 제한
+2. `auth-server-hpa.yaml`: auth CPU 기반 자동 스케일링
+3. `matchmaking-server-hpa.yaml`: matchmaking CPU/메모리 기반 자동 스케일링
+4. `session-orchestrator-hpa.yaml`: orchestrator CPU/메모리 기반 자동 스케일링
+5. `realtime-server-hpa.yaml`: realtime CPU/메모리 기반 자동 스케일링
+6. `auth-server-pdb.yaml`: 노드 드레인 시 auth 최소 1개 Pod 유지
+7. `matchmaking-server-pdb.yaml`: 노드 드레인 시 matchmaking 최소 1개 Pod 유지
+8. `session-orchestrator-pdb.yaml`: 노드 드레인 시 orchestrator 최소 1개 Pod 유지
+9. `realtime-server-pdb.yaml`: 노드 드레인 시 realtime 최소 1개 Pod 유지
+10. `auth-server-networkpolicy.yaml`: auth ingress/egress 허용 범위 제한
+11. `matchmaking-server-networkpolicy.yaml`: matchmaking ingress/egress 허용 범위 제한
+12. `session-orchestrator-networkpolicy.yaml`: orchestrator ingress/egress 허용 범위 제한
+13. `realtime-server-networkpolicy.yaml`: realtime ingress/egress 허용 범위 제한
