@@ -33,6 +33,10 @@ spec:
                   key: gateway-secret-key
             - name: UPSTREAM_TIMEOUT_SECONDS
               value: "15"
+            - name: REALTIME_SERVER_HOST
+              value: "http://realtime-server-service"
+            - name: REALTIME_SERVER_HEALTH_PORT
+              value: "8081"
           livenessProbe:
             httpGet:
               path: /healthz
