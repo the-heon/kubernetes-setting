@@ -56,3 +56,6 @@ realtime-server는 `X-Api-Key`를 사용해 다음 API를 주기 호출합니다
 
 1. `POST /api/game-servers/heartbeat`
 2. `GET /api/game-servers/traffic-policy`
+
+api-gateway는 운영 요약(`/api/ops/summary`)에 realtime 상태를 합치기 위해
+`REALTIME_SERVER_HOST`, `REALTIME_SERVER_HEALTH_PORT`를 사용해 `/health`를 조회합니다.
