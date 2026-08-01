@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: realtime-server
+  labels:
+    app: realtime-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: realtime-server
+  template:
+    metadata:
+      labels:
+        app: realtime-server
+    spec:
+      containers:
+        - name: realtime-server
+          image: daev681/daev681:realtime-server
+          imagePullPolicy: Always
+          workingDir: /app
+          command: ["./realtime-server"]
+          ports:
+            - name: game
+              containerPort: 7777
+            - name: health
+              containerPort: 8081
+          env:
+            - name: GAME_SERVER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: realtime-api-key
+          volumeMounts:
+            - name: config
+              mountPath: /app/server.cfg
+              subPath: server.cfg
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: health
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: health
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: config
+          configMap:
+            name: realtime-server-config
+      imagePullSecrets:
+        - name: my-secret
