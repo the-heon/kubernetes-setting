@@ -37,42 +37,6 @@ spec:
               value: "http://realtime-server-service"
             - name: REALTIME_SERVER_HEALTH_PORT
               value: "8081"
-            - name: AUTH_HEALTH_HOST
-              value: "http://auth-server-service"
-            - name: AUTH_HEALTH_PORT
-              value: "8080"
-            - name: MATCHMAKING_HEALTH_HOST
-              value: "http://matchmaking-server-service"
-            - name: MATCHMAKING_HEALTH_PORT
-              value: "8080"
-            - name: SESSION_ORCHESTRATOR_HEALTH_HOST
-              value: "http://session-orchestrator-service"
-            - name: SESSION_ORCHESTRATOR_HEALTH_PORT
-              value: "8080"
-            - name: ECONOMY_HEALTH_HOST
-              value: "http://economy-server-service"
-            - name: ECONOMY_HEALTH_PORT
-              value: "8080"
-            - name: LIVEOPS_HEALTH_HOST
-              value: "http://liveops-config-server-service"
-            - name: LIVEOPS_HEALTH_PORT
-              value: "8080"
-            - name: RANKING_HEALTH_HOST
-              value: "http://ranking-stats-server-service"
-            - name: RANKING_HEALTH_PORT
-              value: "8080"
-            - name: EVENTBUS_HEALTH_HOST
-              value: "http://event-bus-gateway-service"
-            - name: EVENTBUS_HEALTH_PORT
-              value: "8080"
-            - name: CACHE_HEALTH_HOST
-              value: "http://cache-proxy-server-service"
-            - name: CACHE_HEALTH_PORT
-              value: "8080"
-            - name: AUDIT_HEALTH_HOST
-              value: "http://audit-trail-server-service"
-            - name: AUDIT_HEALTH_PORT
-              value: "8080"
           livenessProbe:
             httpGet:
               path: /healthz

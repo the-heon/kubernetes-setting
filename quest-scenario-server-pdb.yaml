@@ -1,9 +1,0 @@
-apiVersion: policy/v1
-kind: PodDisruptionBudget
-metadata:
-  name: quest-scenario-server-pdb
-spec:
-  minAvailable: 1
-  selector:
-    matchLabels:
-      app: quest-scenario-server
