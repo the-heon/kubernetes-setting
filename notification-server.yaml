@@ -1,0 +1,144 @@
+# notification-server 는 같은 이미지를 두 역할로 띄웁니다.
+#   api    : 기기 등록·발송 요청을 받는 HTTP API (api-gateway 의 /notify/ 가 여기로 옴)
+#   worker : 큐(Postgres)에서 발송 작업을 꺼내 FCM 으로 보냄
+# 데이터베이스는 notification-server-db-init.yaml 이 먼저 만들어 둬야 합니다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-server
+  labels:
+    app: notification-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: notification-server
+  template:
+    metadata:
+      labels:
+        app: notification-server
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532  # distroless nonroot 이미지의 사용자
+      containers:
+        - name: notification-server
+          image: daev681/daev681:notification-server
+          imagePullPolicy: Always
+          args: ["-mode=api"]
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: NOTIFICATION_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: notification-db-password
+            # 위 비밀번호를 끼워 넣습니다. URL 에 그대로 들어가므로 비밀번호는 영문·숫자만 씁니다.
+            - name: DATABASE_URL
+              value: postgres://notification_server:$(NOTIFICATION_DB_PASSWORD)@postgres-service:5432/notification_server?sslmode=disable
+            - name: ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: notification-admin-token
+            - name: CREDENTIALS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: notification-credentials-key
+            - name: LOG_FORMAT
+              value: json
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+      imagePullSecrets:
+        - name: my-secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-server-worker
+  labels:
+    app: notification-server-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-server-worker
+  template:
+    metadata:
+      labels:
+        app: notification-server-worker
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532  # distroless nonroot 이미지의 사용자
+      # 진행 중인 발송 묶음을 마칠 시간을 줍니다 (SHUTDOWN_TIMEOUT_SEC 보다 길게).
+      terminationGracePeriodSeconds: 70
+      containers:
+        - name: notification-server-worker
+          image: daev681/daev681:notification-server
+          imagePullPolicy: Always
+          args: ["-mode=worker"]
+          ports:
+            - name: http
+              containerPort: 8080  # worker 는 /healthz·/readyz 만 엽니다.
+          env:
+            - name: NOTIFICATION_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: notification-db-password
+            - name: DATABASE_URL
+              value: postgres://notification_server:$(NOTIFICATION_DB_PASSWORD)@postgres-service:5432/notification_server?sslmode=disable
+            # FCM 자격증명을 복호화할 때 씁니다. api 와 같은 값이어야 합니다.
+            - name: CREDENTIALS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: notification-credentials-key
+            - name: DB_MAX_CONNS
+              value: "25"
+            - name: SHUTDOWN_TIMEOUT_SEC
+              value: "60"
+            - name: LOG_FORMAT
+              value: json
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+      imagePullSecrets:
+        - name: my-secret

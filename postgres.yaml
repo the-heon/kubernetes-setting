@@ -1,3 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,6 +17,9 @@ metadata:
     app: postgres
 spec:
   replicas: 1
+  # 디스크(ReadWriteOnce)는 파드 하나만 붙일 수 있으므로, 새 파드는 이전 파드가 내려간 뒤에 띄웁니다.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: postgres
@@ -16,7 +30,8 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:latest
+          # 메이저 버전을 고정합니다. latest 로 두면 새 메이저가 나왔을 때 기존 데이터를 읽지 못해 시작하지 못합니다.
+          image: postgres:18
           imagePullPolicy: IfNotPresent
           env:
             - name: POSTGRES_USER
@@ -29,18 +44,21 @@ spec:
             - name: postgres
               containerPort: 5432
           volumeMounts:
+            # 18 부터 이미지가 /var/lib/postgresql/18/docker 에 데이터를 둡니다.
+            # 예전 위치(/var/lib/postgresql/data)에 붙이면 시작을 거부합니다.
             - name: postgres-data
-              mountPath: /var/lib/postgresql/data
+              mountPath: /var/lib/postgresql
           livenessProbe:
             tcpSocket:
               port: postgres
             initialDelaySeconds: 20
             periodSeconds: 10
           readinessProbe:
-            tcpSocket:
-              port: postgres
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-h", "127.0.0.1"]
             initialDelaySeconds: 10
             periodSeconds: 10
       volumes:
         - name: postgres-data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: postgres-data
