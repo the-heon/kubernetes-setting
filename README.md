@@ -27,8 +27,9 @@ Data layer:
 	- `game_platform`: `api-server` (prod 프로파일)
 	- `notification_server`: `notification-server` (전용 계정 `notification_server`, `game_platform` 테이블은 못 읽음)
 
-PostgreSQL 데이터는 PVC(`postgres-data`, 10Gi)에 저장되어 파드가 다시 떠도 남습니다.
-이미지는 메이저 버전(`postgres:18`)으로 고정합니다 - 메이저를 올리려면 `pg_upgrade` 나 덤프/복원이 필요합니다.
+PostgreSQL 이미지는 메이저 버전(`postgres:18`)으로 고정합니다. 18 부터는 데이터 위치가 `/var/lib/postgresql` 이라
+볼륨도 그 위치에 붙입니다(예전 위치 `/var/lib/postgresql/data` 에 붙이면 시작을 거부함).
+데이터는 `emptyDir` 이라 Postgres 파드가 다시 뜨면 사라집니다.
 
 ## Core Services
 
