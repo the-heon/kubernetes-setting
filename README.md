@@ -1,5 +1,7 @@
 # Kubernetes Setting
 
+> 운영 전제(k8s 도입 여부 미정, 초기에는 서버 1대)는 [CLUSTER-PLAN.md](CLUSTER-PLAN.md) 를 먼저 봅니다.
+
 ## Prerequisites
 
 1. Create image pull secret (`my-secret`) used by deployments.
