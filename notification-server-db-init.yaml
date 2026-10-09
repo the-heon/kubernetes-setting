@@ -1,0 +1,48 @@
+# 기존 Postgres 서버에 notification-server 전용 데이터베이스와 계정을 만듭니다.
+# 여러 번 실행해도 됩니다: 이미 있으면 건너뛰고, 계정 비밀번호만 Secret 값으로 다시 맞춥니다.
+# Job 은 한 번 만들면 고칠 수 없으므로, 다시 돌릴 때는 지우고 다시 적용합니다.
+#   kubectl delete job notification-server-db-init --ignore-not-found
+#   kubectl apply -f notification-server-db-init.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: notification-server-db-init
+spec:
+  backoffLimit: 10
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: psql
+          image: postgres:18
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGHOST
+              value: postgres-service
+            - name: PGDATABASE
+              value: postgres
+            - name: PGUSER
+              value: postgres
+            # postgres.yaml 의 POSTGRES_PASSWORD 와 같아야 합니다.
+            - name: PGPASSWORD
+              value: postgres
+            - name: NOTIFICATION_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: notification-db-password
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              until pg_isready -q; do sleep 2; done
+              psql -v ON_ERROR_STOP=1 -v pw="$NOTIFICATION_DB_PASSWORD" <<'SQL'
+              SELECT 'CREATE ROLE notification_server LOGIN'
+              WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'notification_server')\gexec
+              SELECT format('ALTER ROLE notification_server PASSWORD %L', :'pw')\gexec
+              SELECT 'CREATE DATABASE notification_server OWNER notification_server'
+              WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'notification_server')\gexec
+              REVOKE ALL ON DATABASE notification_server FROM PUBLIC;
+              SQL
+              echo "notification_server database is ready"

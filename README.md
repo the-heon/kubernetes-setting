@@ -23,7 +23,12 @@ kubectl apply -f redis-service.yaml
 Data layer:
 
 1. Redis: `api-server` (토큰/서명 캐시)
-2. PostgreSQL: `api-server` (prod 프로파일)
+2. PostgreSQL 18 (서버 1대, 데이터베이스 2개)
+	- `game_platform`: `api-server` (prod 프로파일)
+	- `notification_server`: `notification-server` (전용 계정 `notification_server`, `game_platform` 테이블은 못 읽음)
+
+PostgreSQL 데이터는 PVC(`postgres-data`, 10Gi)에 저장되어 파드가 다시 떠도 남습니다.
+이미지는 메이저 버전(`postgres:18`)으로 고정합니다 - 메이저를 올리려면 `pg_upgrade` 나 덤프/복원이 필요합니다.
 
 ## Core Services
 
@@ -43,6 +48,39 @@ kubectl apply -f react-nginx.yaml
 kubectl apply -f react-nginx-service.yaml
 kubectl apply -f react-nginx-ingress.yaml
 ```
+
+## Notification Server
+
+여러 앱이 같이 쓰는 푸시 알림 서버입니다. 앱·백엔드는 api-gateway 의 `/notify/...` 로 부르고,
+게이트웨이가 앞의 `/notify` 를 떼고 `notification-server-service` 로 넘깁니다.
+
+1. `app-secrets` 에 `notification-admin-token`, `notification-credentials-key`, `notification-db-password` 를 실제 값으로 넣습니다.
+   예시 파일의 `change-me` 그대로면 알림 서버가 시작하지 않습니다.
+2. 데이터베이스·계정을 만들고 서버를 띄웁니다.
+
+```bash
+kubectl apply -f postgres.yaml -f postgres-service.yaml
+kubectl apply -f notification-server-db-init.yaml
+kubectl wait --for=condition=complete job/notification-server-db-init --timeout=180s
+kubectl apply -f notification-server.yaml
+kubectl apply -f notification-server-service.yaml
+kubectl apply -f notification-server-networkpolicy.yaml
+```
+
+- `notification-server`(api, 2개)와 `notification-server-worker`(1개)는 같은 이미지(`daev681/daev681:notification-server`)를
+  `-mode=api` / `-mode=worker` 로 띄운 것입니다. 테이블은 시작할 때 자동으로 만듭니다.
+- 관리자 API(`/admin/...`)는 게이트웨이에서 막혀 있으므로 port-forward 로 부릅니다. 앱을 처음 연결할 때:
+
+```bash
+kubectl port-forward svc/notification-server-service 8090:80
+ADMIN_TOKEN=...   # app-secrets 의 notification-admin-token
+curl -X POST localhost:8090/admin/v1/apps -H "Authorization: Bearer $ADMIN_TOKEN"   -H 'Content-Type: application/json' -d '{"id":"pet-app","name":"반려동물 건강관리","default_locale":"ko"}'
+curl -X POST localhost:8090/admin/v1/apps/pet-app/keys -H "Authorization: Bearer $ADMIN_TOKEN"   -H 'Content-Type: application/json' -d '{"kind":"client","label":"pet-app android/ios"}'   # ns_pub_ (앱에 넣음)
+curl -X POST localhost:8090/admin/v1/apps/pet-app/keys -H "Authorization: Bearer $ADMIN_TOKEN"   -H 'Content-Type: application/json' -d '{"kind":"server","label":"pet-app backend"}'      # ns_sec_ (서버에만 둠)
+curl -X PUT localhost:8090/admin/v1/apps/pet-app/credentials/fcm -H "Authorization: Bearer $ADMIN_TOKEN"   -H 'Content-Type: application/json' --data-binary @firebase-service-account.json
+```
+
+자세한 API 는 notification-server 저장소의 README 를 봅니다.
 
 ## Monitoring Stack
 
@@ -86,3 +124,4 @@ api-gateway는 운영 요약(`/api/ops/summary`)에 realtime 상태를 합치기
 2. `realtime-server-hpa.yaml`: realtime CPU/메모리 기반 자동 스케일링
 3. `realtime-server-pdb.yaml`: 노드 드레인 시 realtime 최소 1개 Pod 유지
 4. `realtime-server-networkpolicy.yaml`: realtime ingress/egress 허용 범위 제한
+5. `notification-server-networkpolicy.yaml`: notification-server 는 api-gateway 에서 오는 요청만 받음

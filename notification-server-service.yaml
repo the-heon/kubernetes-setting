@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-server-service
+spec:
+  selector:
+    app: notification-server  # api 파드만 (worker 는 받지 않음)
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: ClusterIP  # 밖에서는 api-gateway 의 /notify/ 로만 들어옴

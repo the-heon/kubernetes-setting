@@ -37,6 +37,11 @@ spec:
               value: "http://realtime-server-service"
             - name: REALTIME_SERVER_HEALTH_PORT
               value: "8081"
+            # /notify/... 를 notification-server 로 넘깁니다 (JWT 검사 없음, 키 확인은 알림 서버가 함).
+            - name: NOTIFICATION_SERVER_URL
+              value: "http://notification-server-service"
+            - name: RATE_LIMIT_NOTIFY_RPM
+              value: "60"
           livenessProbe:
             httpGet:
               path: /healthz
