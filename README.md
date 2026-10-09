@@ -53,6 +53,8 @@ kubectl apply -f react-nginx-ingress.yaml
 
 여러 앱이 같이 쓰는 푸시 알림 서버입니다. 앱·백엔드는 api-gateway 의 `/notify/...` 로 부르고,
 게이트웨이가 앞의 `/notify` 를 떼고 `notification-server-service` 로 넘깁니다.
+바깥 요청은 react-nginx 가 받으므로 `config/nginx.conf` 에서 `/notify/` 도 게이트웨이로 넘깁니다.
+nginx 설정을 바꾼 뒤에는 `config/nginx-setting.sh` 로 ConfigMap 을 다시 만들고 react-nginx 를 재시작합니다.
 
 1. `app-secrets` 에 `notification-admin-token`, `notification-credentials-key`, `notification-db-password` 를 실제 값으로 넣습니다.
    예시 파일의 `change-me` 그대로면 알림 서버가 시작하지 않습니다.
