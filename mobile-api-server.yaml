@@ -1,6 +1,6 @@
 # mobile-api-server: 모바일 앱 전용 API 서버 (Kotlin · Spring Boot). 웹은 api-server 가 맡습니다.
-#   8090 (http)       : 앱 API. api-gateway 의 /mobile/v1/ 가 여기로 옵니다 (게이트웨이 연결은 아직).
-#   8091 (management) : 상태 확인·Prometheus 지표·API 명세. 밖에 열지 않습니다.
+#   8070 (http)       : 앱 API. api-gateway 의 /mobile/v1/ 가 여기로 옵니다.
+#   8071 (management) : 상태 확인·Prometheus 지표·API 명세. 밖에 열지 않습니다.
 # 데이터베이스는 mobile-api-server-db-init.yaml 이 먼저 만들어 둬야 합니다. 테이블은 서버가 시작할 때 Flyway 가 만듭니다.
 # 상태를 서버에 두지 않으므로 replicas 만 올리면 늘어납니다. 서버 1대 운영(CLUSTER-PLAN.md)이라 1개로 둡니다.
 apiVersion: apps/v1
@@ -37,9 +37,9 @@ spec:
           imagePullPolicy: Always
           ports:
             - name: http
-              containerPort: 8090
+              containerPort: 8070
             - name: management
-              containerPort: 8091
+              containerPort: 8071
           env:
             - name: DATASOURCE_URL
               value: jdbc:postgresql://postgres-service:5432/mobile_api_server

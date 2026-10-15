@@ -14,7 +14,7 @@
   - notification-server 매니페스트 (`notification-server*.yaml`), api-gateway 의 `/notify/` 설정, nginx 의 `/notify/` 경로
   - Postgres 이미지 `postgres:18` 고정과 마운트 위치 변경 (`/var/lib/postgresql`)
   - realtime-server → game-server 이름 변경 (`game-server*.yaml`, 이미지 태그 `game-server`, Secret 키 `game-server-api-key`)
-  - mobile-api-server 매니페스트 (`mobile-api-server*.yaml`). Postgres 가 `emptyDir` 라 계정 데이터를 실제로 받기 전에 영구 저장부터 해야 한다
+  - mobile-api-server 매니페스트 (`mobile-api-server*.yaml`), api-gateway 의 `/mobile/` 설정, nginx 의 `/mobile/` 경로. Postgres 가 `emptyDir` 라 계정 데이터를 실제로 받기 전에 영구 저장부터 해야 한다
 - Postgres(`emptyDir`)와 Redis(볼륨 없음)는 파드가 다시 뜨면 데이터가 사라진다.
 
 ## 다시 k8s 를 쓰게 되면 볼 것

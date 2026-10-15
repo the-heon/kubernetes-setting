@@ -103,9 +103,12 @@ curl -X PUT localhost:8090/admin/v1/apps/pet-app/credentials/fcm -H "Authorizati
 모바일 앱 전용 API 서버입니다 (Kotlin · Spring Boot, 저장소 `the-heon/mobile-api-server`). 웹은 api-server 가 맡습니다.
 여러 앱이 같이 쓰고, 앱은 앱 공개 키(`X-Api-Key: ms_pub_...`)로 어느 앱인지 밝힙니다.
 
-- 8090: 앱 API. **api-gateway 의 `/mobile/v1/` 연결은 아직 만들지 않았습니다.** 게이트웨이 작업이 끝나면
-  `api-gateway.yaml` 에 서버 주소를, `config/nginx.conf` 에 `/mobile/` 경로를 더합니다. 그 전까지는 클러스터 밖에서 부를 수 없습니다.
-- 8091: 관리 포트 (`/actuator/health/liveness`·`readiness`, `/actuator/prometheus`, `/actuator/openapi`). Service 에는 Prometheus 수집용으로만 열고, NetworkPolicy 가 prometheus 파드만 들여보냅니다.
+- 8070: 앱 API. 앱은 `https://<도메인>/mobile/v1/...` 로 부릅니다: react-nginx(`config/nginx.conf` 의 `/mobile/`) → api-gateway
+  (`MOBILE_API_SERVER_URL`, `/mobile/v1/` 만 넘김) → 이 서버의 `/v1/...`. nginx 설정을 바꿨으면 `config/nginx-setting.sh` 로 ConfigMap 을
+  다시 만들고 react-nginx 를 재시작합니다.
+- **앱을 붙이기 전에 사용자 실제 IP 전달을 맞춥니다.** 지금 nginx 는 `X-Forwarded-For` 를 넘기지 않아 게이트웨이에는 모든 요청이
+  nginx IP 하나로 보이고, 앱용 속도 제한(`RATE_LIMIT_MOBILE_RPM`)이 전체 사용자에게 하나로 걸립니다 ([CLUSTER-PLAN.md](CLUSTER-PLAN.md)).
+- 8071: 관리 포트 (`/actuator/health/liveness`·`readiness`, `/actuator/prometheus`, `/actuator/openapi`). Service 에는 Prometheus 수집용으로만 열고, NetworkPolicy 가 prometheus 파드만 들여보냅니다.
 - 1개로 띄웁니다 (서버 1대 운영). 상태를 서버에 두지 않으므로 `replicas` 만 올리면 늘어납니다. HPA·PDB 는 두지 않았습니다 (노드 1대에서 PDB 는 노드 점검을 막을 수 있음).
 
 1. `app-secrets` 에 `mobile-api-admin-token`(32자 이상), `mobile-api-db-password` 를 실제 값으로 넣습니다.
@@ -140,7 +143,7 @@ Prometheus scrapes:
 1. `api-server-service:8080/actuator/prometheus`
 2. `api-gateway-service:80/readyz`
 3. `game-server-service:8081/metrics`
-4. `mobile-api-server-service:8091/actuator/prometheus`
+4. `mobile-api-server-service:8071/actuator/prometheus`
 
 Deploy:
 
@@ -161,7 +164,7 @@ kubectl apply -f monitoring/prometheus-service.yaml
 3. game-server:
 	- liveness: `/health`
 	- readiness: `/health`
-4. mobile-api-server (관리 포트 8091):
+4. mobile-api-server (관리 포트 8071):
 	- startup·liveness: `/actuator/health/liveness` (DB 를 보지 않음)
 	- readiness: `/actuator/health/readiness` (DB 에 닿아야 UP)
 
