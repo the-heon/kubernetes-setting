@@ -13,6 +13,24 @@
 kubectl apply -f app-secrets.example.yaml
 ```
 
+## Images (2026-10-15)
+
+각 저장소의 GitHub Actions(`.github/workflows/ci.yml`)가 main/master 에 올라온 코드로 이미지를 만들어 Docker Hub `daev681/daev681` 에 올립니다.
+
+| 저장소 | 태그 |
+|---|---|
+| api-server | `api-server`, `api-server-<커밋 7자리>` |
+| api-gateway | `api-gateway`, `api-gateway-<커밋>` |
+| mobile-api-server | `mobile-api-server`, `mobile-api-server-<커밋>` |
+| notification-server | `notification-server`, `notification-server-<커밋>` |
+| web-front | `react-nginx`, `react-nginx-<커밋>` |
+| game-server | CI 없음 (Windows 전용 IOCP 서버라 리눅스에서 빌드하지 않음) |
+
+- 저장소마다 시크릿 `DOCKERHUB_USERNAME`·`DOCKERHUB_TOKEN` 이 있어야 올립니다 (없으면 그 단계만 건너뜀). Docker Hub → Account settings → Personal access tokens 에서 Read & Write 토큰을 만들어 넣습니다.
+- 배포: 매니페스트는 서비스 이름 태그에 `imagePullPolicy: Always` 라 `kubectl rollout restart deploy/<이름>` 이면 새 이미지를 받습니다.
+- **되돌리기**: `kubectl set image deploy/mobile-api-server mobile-api-server=daev681/daev681:mobile-api-server-<커밋>`
+  (어느 커밋이 문제인지는 저장소의 `git log`). 다시 최신으로 돌아갈 때는 서비스 이름 태그로 `set image` 합니다.
+
 ## Data Services
 
 ```bash
