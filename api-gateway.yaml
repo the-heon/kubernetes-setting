@@ -48,6 +48,10 @@ spec:
             # 통신사망은 여러 사람이 공인 IP 하나를 같이 쓰는 경우가 많아 다른 경로보다 넉넉히 둡니다.
             - name: RATE_LIMIT_MOBILE_RPM
               value: "300"
+            # X-Forwarded-For 를 믿을 바로 앞 연결의 범위. 게이트웨이는 클러스터 안(ClusterIP)에서만 들어오므로 사설 대역 전체를 믿습니다.
+            # react-nginx 가 실제 사용자 IP 하나만 넘깁니다 (config/nginx.conf).
+            - name: TRUSTED_PROXY_CIDRS
+              value: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
           livenessProbe:
             httpGet:
               path: /healthz
