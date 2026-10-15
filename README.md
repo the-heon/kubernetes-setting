@@ -41,15 +41,25 @@ kubectl apply -f api-server-service.yaml
 kubectl apply -f api-gateway.yaml
 kubectl apply -f api-gateway-service.yaml
 kubectl apply -f api-gateway-hpa.yaml
-kubectl apply -f realtime-server-config.yaml
-kubectl apply -f realtime-server.yaml
-kubectl apply -f realtime-server-service.yaml
-kubectl apply -f realtime-server-hpa.yaml
-kubectl apply -f realtime-server-pdb.yaml
-kubectl apply -f realtime-server-networkpolicy.yaml
+kubectl apply -f game-server-config.yaml
+kubectl apply -f game-server.yaml
+kubectl apply -f game-server-service.yaml
+kubectl apply -f game-server-hpa.yaml
+kubectl apply -f game-server-pdb.yaml
+kubectl apply -f game-server-networkpolicy.yaml
 kubectl apply -f react-nginx.yaml
 kubectl apply -f react-nginx-service.yaml
 kubectl apply -f react-nginx-ingress.yaml
+```
+
+게임 서버는 2026-10-15 에 `realtime-server` 에서 `game-server` 로 이름을 바꿨습니다 (저장소 `the-heon/game-server`).
+이미지는 `daev681/daev681:game-server` 태그로 올리고, 실행 파일 이름도 `game-server` 입니다.
+예전 이름으로 띄운 클러스터에서는 예전 리소스를 지우고, Secret 의 키 이름도 옮깁니다.
+
+```bash
+kubectl delete deploy/realtime-server svc/realtime-server-service configmap/realtime-server-config \
+  hpa/realtime-server-hpa pdb/realtime-server-pdb networkpolicy/realtime-server-networkpolicy --ignore-not-found
+# app-secrets 의 realtime-api-key 값을 game-server-api-key 로 옮긴 뒤 위 game-server 매니페스트를 적용합니다.
 ```
 
 ## Notification Server
@@ -93,7 +103,7 @@ Prometheus scrapes:
 
 1. `api-server-service:8080/actuator/prometheus`
 2. `api-gateway-service:80/readyz`
-3. `realtime-server-service:8081/metrics`
+3. `game-server-service:8081/metrics`
 
 Deploy:
 
@@ -111,22 +121,22 @@ kubectl apply -f monitoring/prometheus-service.yaml
 2. api-server:
 	- liveness: `/actuator/health/liveness`
 	- readiness: `/actuator/health/readiness`
-3. realtime-server:
+3. game-server:
 	- liveness: `/health`
 	- readiness: `/health`
 
-realtime-server는 `X-Api-Key`를 사용해 다음 API를 주기 호출합니다.
+game-server는 `X-Api-Key`를 사용해 다음 API를 주기 호출합니다.
 
 1. `POST /api/game-servers/heartbeat`
 2. `GET /api/game-servers/traffic-policy`
 
-api-gateway는 운영 요약(`/api/ops/summary`)에 realtime 상태를 합치기 위해
-`REALTIME_SERVER_HOST`, `REALTIME_SERVER_HEALTH_PORT`를 사용해 `/health`를 조회합니다.
+api-gateway는 운영 요약(`/api/ops/summary`)에 게임 서버 상태를 합치기 위해
+`GAME_SERVER_HOST`, `GAME_SERVER_HEALTH_PORT`를 사용해 `/health`를 조회합니다.
 
 ## Resilience Controls
 
 1. `api-gateway-hpa.yaml`: gateway CPU 기반 자동 스케일링
-2. `realtime-server-hpa.yaml`: realtime CPU/메모리 기반 자동 스케일링
-3. `realtime-server-pdb.yaml`: 노드 드레인 시 realtime 최소 1개 Pod 유지
-4. `realtime-server-networkpolicy.yaml`: realtime ingress/egress 허용 범위 제한
+2. `game-server-hpa.yaml`: game-server CPU/메모리 기반 자동 스케일링
+3. `game-server-pdb.yaml`: 노드 드레인 시 game-server 최소 1개 Pod 유지
+4. `game-server-networkpolicy.yaml`: game-server ingress/egress 허용 범위 제한
 5. `notification-server-networkpolicy.yaml`: notification-server 는 api-gateway 에서 오는 요청만 받음

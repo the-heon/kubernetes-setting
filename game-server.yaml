@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: realtime-server
+  name: game-server
   labels:
-    app: realtime-server
+    app: game-server
 spec:
   replicas: 2
   strategy:
@@ -13,11 +13,11 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app: realtime-server
+      app: game-server
   template:
     metadata:
       labels:
-        app: realtime-server
+        app: game-server
     spec:
       terminationGracePeriodSeconds: 30
       affinity:
@@ -30,14 +30,14 @@ spec:
                     - key: app
                       operator: In
                       values:
-                        - realtime-server
+                        - game-server
                 topologyKey: kubernetes.io/hostname
       containers:
-        - name: realtime-server
-          image: daev681/daev681:realtime-server
+        - name: game-server
+          image: daev681/daev681:game-server
           imagePullPolicy: Always
           workingDir: /app
-          command: ["./realtime-server"]
+          command: ["./game-server"]
           ports:
             - name: game
               containerPort: 7777
@@ -48,7 +48,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
-                  key: realtime-api-key
+                  key: game-server-api-key
           resources:
             requests:
               cpu: "300m"
@@ -79,6 +79,6 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: realtime-server-config
+            name: game-server-config
       imagePullSecrets:
         - name: my-secret

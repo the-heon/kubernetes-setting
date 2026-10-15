@@ -19,7 +19,7 @@ data:
         static_configs:
           - targets: ["api-gateway-service:80"]
 
-      - job_name: "realtime-server"
+      - job_name: "game-server"
         metrics_path: /metrics
         static_configs:
-          - targets: ["realtime-server-service:8081"]
+          - targets: ["game-server-service:8081"]
