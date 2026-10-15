@@ -25,6 +25,11 @@ spec:
         - name: notification-server
           image: daev681/daev681:notification-server
           imagePullPolicy: Always
+          lifecycle:
+            # 내려가기 전에 5초 기다립니다. Service 목록에서 빠지는 동안 들어온 요청이 끊기지 않게 합니다 (k8s 1.30 이상).
+            preStop:
+              sleep:
+                seconds: 5
           args: ["-mode=api"]
           ports:
             - name: http
