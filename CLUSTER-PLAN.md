@@ -10,9 +10,11 @@
 
 - `replicas: 2`, HPA, PDB 처럼 여러 대를 전제로 한 설정은 3대 테스트 때 쓰던 것이다.
   지금 그 구성으로 운영 중이라는 뜻이 아니다.
-- 아래는 3대 테스트 **이후**에 추가·변경되어, 실제 클러스터에서는 아직 확인하지 않았다 (2026-10-09).
+- 아래는 3대 테스트 **이후**에 추가·변경되어, 실제 클러스터에서는 아직 확인하지 않았다 (2026-10-09, 2026-10-15).
   - notification-server 매니페스트 (`notification-server*.yaml`), api-gateway 의 `/notify/` 설정, nginx 의 `/notify/` 경로
   - Postgres 이미지 `postgres:18` 고정과 마운트 위치 변경 (`/var/lib/postgresql`)
+  - realtime-server → game-server 이름 변경 (`game-server*.yaml`, 이미지 태그 `game-server`, Secret 키 `game-server-api-key`)
+  - mobile-api-server 매니페스트 (`mobile-api-server*.yaml`). Postgres 가 `emptyDir` 라 계정 데이터를 실제로 받기 전에 영구 저장부터 해야 한다
 - Postgres(`emptyDir`)와 Redis(볼륨 없음)는 파드가 다시 뜨면 데이터가 사라진다.
 
 ## 다시 k8s 를 쓰게 되면 볼 것

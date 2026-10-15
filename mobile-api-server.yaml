@@ -1,0 +1,104 @@
+# mobile-api-server: 모바일 앱 전용 API 서버 (Kotlin · Spring Boot). 웹은 api-server 가 맡습니다.
+#   8090 (http)       : 앱 API. api-gateway 의 /mobile/v1/ 가 여기로 옵니다 (게이트웨이 연결은 아직).
+#   8091 (management) : 상태 확인·Prometheus 지표·API 명세. 밖에 열지 않습니다.
+# 데이터베이스는 mobile-api-server-db-init.yaml 이 먼저 만들어 둬야 합니다. 테이블은 서버가 시작할 때 Flyway 가 만듭니다.
+# 상태를 서버에 두지 않으므로 replicas 만 올리면 늘어납니다. 서버 1대 운영(CLUSTER-PLAN.md)이라 1개로 둡니다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mobile-api-server
+  labels:
+    app: mobile-api-server
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # 새 파드가 준비된 뒤에 예전 파드를 내려서, 1개여도 배포 중에 끊기지 않습니다.
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: mobile-api-server
+  template:
+    metadata:
+      labels:
+        app: mobile-api-server
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001  # 이미지(Dockerfile)의 사용자
+        runAsGroup: 10001
+      # Spring 은 종료 신호를 받으면 처리 중인 요청을 마치고 끝납니다.
+      terminationGracePeriodSeconds: 40
+      containers:
+        - name: mobile-api-server
+          image: daev681/daev681:mobile-api-server
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8090
+            - name: management
+              containerPort: 8091
+          env:
+            - name: DATASOURCE_URL
+              value: jdbc:postgresql://postgres-service:5432/mobile_api_server
+            - name: DATASOURCE_USERNAME
+              value: mobile_api_server
+            - name: DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: mobile-api-db-password
+            - name: ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: mobile-api-admin-token
+            # 로그를 JSON 한 줄씩 냅니다.
+            - name: LOGGING_STRUCTURED_FORMAT_CONSOLE
+              value: ecs
+          resources:
+            # JVM 힙은 메모리 한도의 75% 까지 씁니다 (Dockerfile 의 MaxRAMPercentage).
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              memory: "1Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            # 루트 파일시스템은 읽기 전용이라, Tomcat·JVM 이 쓰는 임시 파일만 여기에 씁니다.
+            - name: tmp
+              mountPath: /tmp
+          # JVM 이 뜨는 동안(최대 2분)은 liveness 로 재시작하지 않습니다.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: management
+            periodSeconds: 5
+            failureThreshold: 24
+          # DB 를 보지 않습니다. DB 가 잠깐 끊겼다고 파드를 재시작하지 않게 합니다.
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: management
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # DB 에 닿지 않으면 트래픽을 받지 않습니다.
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: management
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      imagePullSecrets:
+        - name: my-secret

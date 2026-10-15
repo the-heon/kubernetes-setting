@@ -23,3 +23,8 @@ data:
         metrics_path: /metrics
         static_configs:
           - targets: ["game-server-service:8081"]
+
+      - job_name: "mobile-api-server"
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets: ["mobile-api-server-service:8091"]

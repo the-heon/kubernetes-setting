@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mobile-api-server-service
+spec:
+  selector:
+    app: mobile-api-server
+  ports:
+    # 앱 API. 밖에서는 api-gateway 의 /mobile/v1/ 로만 들어옵니다.
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8090
+    # Prometheus 수집용. NetworkPolicy 가 prometheus 파드만 들여보냅니다.
+    - name: management
+      protocol: TCP
+      port: 8091
+      targetPort: 8091
+  type: ClusterIP
