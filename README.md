@@ -25,9 +25,10 @@ kubectl apply -f redis-service.yaml
 Data layer:
 
 1. Redis: `api-server` (토큰/서명 캐시)
-2. PostgreSQL 18 (서버 1대, 데이터베이스 2개)
+2. PostgreSQL 18 (서버 1대, 데이터베이스 3개)
 	- `game_platform`: `api-server` (prod 프로파일)
 	- `notification_server`: `notification-server` (전용 계정 `notification_server`, `game_platform` 테이블은 못 읽음)
+	- `mobile_api_server`: `mobile-api-server` (전용 계정 `mobile_api_server`, 다른 데이터베이스는 못 읽음)
 
 PostgreSQL 이미지는 메이저 버전(`postgres:18`)으로 고정합니다. 18 부터는 데이터 위치가 `/var/lib/postgresql` 이라
 볼륨도 그 위치에 붙입니다(예전 위치 `/var/lib/postgresql/data` 에 붙이면 시작을 거부함).
@@ -97,6 +98,41 @@ curl -X PUT localhost:8090/admin/v1/apps/pet-app/credentials/fcm -H "Authorizati
 
 자세한 API 는 notification-server 저장소의 README 를 봅니다.
 
+## Mobile API Server
+
+모바일 앱 전용 API 서버입니다 (Kotlin · Spring Boot, 저장소 `the-heon/mobile-api-server`). 웹은 api-server 가 맡습니다.
+여러 앱이 같이 쓰고, 앱은 앱 공개 키(`X-Api-Key: ms_pub_...`)로 어느 앱인지 밝힙니다.
+
+- 8090: 앱 API. **api-gateway 의 `/mobile/v1/` 연결은 아직 만들지 않았습니다.** 게이트웨이 작업이 끝나면
+  `api-gateway.yaml` 에 서버 주소를, `config/nginx.conf` 에 `/mobile/` 경로를 더합니다. 그 전까지는 클러스터 밖에서 부를 수 없습니다.
+- 8091: 관리 포트 (`/actuator/health/liveness`·`readiness`, `/actuator/prometheus`, `/actuator/openapi`). Service 에는 Prometheus 수집용으로만 열고, NetworkPolicy 가 prometheus 파드만 들여보냅니다.
+- 1개로 띄웁니다 (서버 1대 운영). 상태를 서버에 두지 않으므로 `replicas` 만 올리면 늘어납니다. HPA·PDB 는 두지 않았습니다 (노드 1대에서 PDB 는 노드 점검을 막을 수 있음).
+
+1. `app-secrets` 에 `mobile-api-admin-token`(32자 이상), `mobile-api-db-password` 를 실제 값으로 넣습니다.
+   관리자 토큰이 `change-me` 그대로면(32자 미만) 서버가 시작하지 않습니다.
+2. 이미지 `daev681/daev681:mobile-api-server` 를 올립니다 (mobile-api-server 저장소의 Dockerfile).
+3. 데이터베이스·계정을 만들고 서버를 띄웁니다. 테이블은 서버가 시작할 때 Flyway 가 만듭니다.
+
+```bash
+kubectl apply -f postgres.yaml -f postgres-service.yaml
+kubectl apply -f mobile-api-server-db-init.yaml
+kubectl wait --for=condition=complete job/mobile-api-server-db-init --timeout=180s
+kubectl apply -f mobile-api-server.yaml
+kubectl apply -f mobile-api-server-service.yaml
+kubectl apply -f mobile-api-server-networkpolicy.yaml
+```
+
+관리자 API(`/admin/...`)는 port-forward 로 부릅니다. 앱을 처음 연결할 때:
+
+```bash
+kubectl port-forward svc/mobile-api-server-service 8095:80
+ADMIN_TOKEN=...   # app-secrets 의 mobile-api-admin-token
+curl -X POST localhost:8095/admin/v1/apps -H "Authorization: Bearer $ADMIN_TOKEN" -H 'Content-Type: application/json' -d '{"id":"pet-app","name":"Pet Health Care"}'
+curl -X POST localhost:8095/admin/v1/apps/pet-app/keys -H "Authorization: Bearer $ADMIN_TOKEN" -H 'Content-Type: application/json' -d '{"label":"pet-app android/ios"}'   # ms_pub_ (앱에 넣음)
+```
+
+자세한 API 는 mobile-api-server 저장소의 README 를 봅니다.
+
 ## Monitoring Stack
 
 Prometheus scrapes:
@@ -104,6 +140,7 @@ Prometheus scrapes:
 1. `api-server-service:8080/actuator/prometheus`
 2. `api-gateway-service:80/readyz`
 3. `game-server-service:8081/metrics`
+4. `mobile-api-server-service:8091/actuator/prometheus`
 
 Deploy:
 
@@ -124,6 +161,9 @@ kubectl apply -f monitoring/prometheus-service.yaml
 3. game-server:
 	- liveness: `/health`
 	- readiness: `/health`
+4. mobile-api-server (관리 포트 8091):
+	- startup·liveness: `/actuator/health/liveness` (DB 를 보지 않음)
+	- readiness: `/actuator/health/readiness` (DB 에 닿아야 UP)
 
 game-server는 `X-Api-Key`를 사용해 다음 API를 주기 호출합니다.
 
@@ -140,3 +180,4 @@ api-gateway는 운영 요약(`/api/ops/summary`)에 게임 서버 상태를 합�
 3. `game-server-pdb.yaml`: 노드 드레인 시 game-server 최소 1개 Pod 유지
 4. `game-server-networkpolicy.yaml`: game-server ingress/egress 허용 범위 제한
 5. `notification-server-networkpolicy.yaml`: notification-server 는 api-gateway 에서 오는 요청만 받음
+6. `mobile-api-server-networkpolicy.yaml`: 앱 API 는 api-gateway 에서만, 관리 포트는 prometheus 에서만 받음
