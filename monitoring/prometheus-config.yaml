@@ -27,4 +27,4 @@ data:
       - job_name: "mobile-api-server"
         metrics_path: /actuator/prometheus
         static_configs:
-          - targets: ["mobile-api-server-service:8091"]
+          - targets: ["mobile-api-server-service:8071"]

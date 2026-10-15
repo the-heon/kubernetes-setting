@@ -1,6 +1,6 @@
 # mobile-api-server 로 들어오는 요청:
-#   8090 (앱 API)    : api-gateway 에서 온 것만
-#   8091 (관리 포트) : prometheus 에서 온 것만 (상태 확인 프로브는 노드의 kubelet 이 부르며 대부분의 CNI 에서 허용됩니다)
+#   8070 (앱 API)    : api-gateway 에서 온 것만
+#   8071 (관리 포트) : prometheus 에서 온 것만 (상태 확인 프로브는 노드의 kubelet 이 부르며 대부분의 CNI 에서 허용됩니다)
 # 관리자 API(/admin/...)는 kubectl port-forward 로 부릅니다 (port-forward 는 이 정책을 거치지 않음).
 # 나가는 쪽은 막지 않습니다: Postgres 와, 나중에 로그인 기능이 Google·Apple 공개키(인터넷 443)를 가져와야 합니다.
 apiVersion: networking.k8s.io/v1
@@ -20,11 +20,11 @@ spec:
               app: api-gateway
       ports:
         - protocol: TCP
-          port: 8090
+          port: 8070
     - from:
         - podSelector:
             matchLabels:
               app: prometheus
       ports:
         - protocol: TCP
-          port: 8091
+          port: 8071

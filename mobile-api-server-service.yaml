@@ -10,10 +10,10 @@ spec:
     - name: http
       protocol: TCP
       port: 80
-      targetPort: 8090
+      targetPort: 8070
     # Prometheus 수집용. NetworkPolicy 가 prometheus 파드만 들여보냅니다.
     - name: management
       protocol: TCP
-      port: 8091
-      targetPort: 8091
+      port: 8071
+      targetPort: 8071
   type: ClusterIP

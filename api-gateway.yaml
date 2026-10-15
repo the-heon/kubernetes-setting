@@ -42,6 +42,12 @@ spec:
               value: "http://notification-server-service"
             - name: RATE_LIMIT_NOTIFY_RPM
               value: "60"
+            # /mobile/v1/... 를 mobile-api-server 로 넘깁니다 (JWT 검사 없음, 앱 키·앱 토큰은 그 서버가 확인함).
+            - name: MOBILE_API_SERVER_URL
+              value: "http://mobile-api-server-service"
+            # 통신사망은 여러 사람이 공인 IP 하나를 같이 쓰는 경우가 많아 다른 경로보다 넉넉히 둡니다.
+            - name: RATE_LIMIT_MOBILE_RPM
+              value: "300"
           livenessProbe:
             httpGet:
               path: /healthz
