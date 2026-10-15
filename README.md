@@ -106,8 +106,9 @@ curl -X PUT localhost:8090/admin/v1/apps/pet-app/credentials/fcm -H "Authorizati
 - 8070: 앱 API. 앱은 `https://<도메인>/mobile/v1/...` 로 부릅니다: react-nginx(`config/nginx.conf` 의 `/mobile/`) → api-gateway
   (`MOBILE_API_SERVER_URL`, `/mobile/v1/` 만 넘김) → 이 서버의 `/v1/...`. nginx 설정을 바꿨으면 `config/nginx-setting.sh` 로 ConfigMap 을
   다시 만들고 react-nginx 를 재시작합니다.
-- **앱을 붙이기 전에 사용자 실제 IP 전달을 맞춥니다.** 지금 nginx 는 `X-Forwarded-For` 를 넘기지 않아 게이트웨이에는 모든 요청이
-  nginx IP 하나로 보이고, 앱용 속도 제한(`RATE_LIMIT_MOBILE_RPM`)이 전체 사용자에게 하나로 걸립니다 ([CLUSTER-PLAN.md](CLUSTER-PLAN.md)).
+- 사용자 실제 IP: react-nginx 가 앞단(ingress-nginx)이 넘긴 `X-Forwarded-For` 에서 실제 사용자 IP 를 찾아 그 값 하나만 게이트웨이로 넘기고,
+  게이트웨이는 사설 대역(`TRUSTED_PROXY_CIDRS`)에서 온 그 값을 IP별 속도 제한에 씁니다. 실제 클러스터에서 확인할 조건 두 가지는
+  [CLUSTER-PLAN.md](CLUSTER-PLAN.md) 에 있습니다.
 - 8071: 관리 포트 (`/actuator/health/liveness`·`readiness`, `/actuator/prometheus`, `/actuator/openapi`). Service 에는 Prometheus 수집용으로만 열고, NetworkPolicy 가 prometheus 파드만 들여보냅니다.
 - 1개로 띄웁니다 (서버 1대 운영). 상태를 서버에 두지 않으므로 `replicas` 만 올리면 늘어납니다. HPA·PDB 는 두지 않았습니다 (노드 1대에서 PDB 는 노드 점검을 막을 수 있음).
 
