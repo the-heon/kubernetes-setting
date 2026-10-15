@@ -1,3 +1,18 @@
+# 데이터는 디스크(PVC)에 둡니다. 파드가 다시 떠도(이미지 업데이트·노드 재부팅 등) 데이터가 남습니다.
+# storageClassName 을 비워 두어 클러스터의 기본 StorageClass 를 씁니다. 기본 StorageClass 가 없는 클러스터면
+# PVC 가 Pending 에 머물고 Postgres 가 뜨지 않습니다 (kubectl get storageclass 로 확인).
+# 백업은 postgres-backup.yaml (매일 pg_dumpall).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,6 +21,9 @@ metadata:
     app: postgres
 spec:
   replicas: 1
+  # 디스크(ReadWriteOnce)는 파드 하나만 붙일 수 있으므로, 새 파드는 이전 파드가 내려간 뒤에 띄웁니다.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: postgres
@@ -39,11 +57,13 @@ spec:
               port: postgres
             initialDelaySeconds: 20
             periodSeconds: 10
+          # 포트가 열려도 시작 중(복구 등)이면 접속을 받지 못하므로 실제로 접속을 받는지 봅니다.
           readinessProbe:
-            tcpSocket:
-              port: postgres
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-h", "127.0.0.1"]
             initialDelaySeconds: 10
             periodSeconds: 10
       volumes:
         - name: postgres-data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: postgres-data

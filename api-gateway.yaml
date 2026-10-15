@@ -14,10 +14,25 @@ spec:
       labels:
         app: api-gateway
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532  # distroless nonroot 이미지의 사용자
+      # SHUTDOWN_TIMEOUT_SECONDS(20) + preStop(5) 보다 길게 둡니다.
+      terminationGracePeriodSeconds: 30
       containers:
         - name: api-gateway
           image: daev681/daev681:api-gateway  # 빌드된 Docker 이미지 이름
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           imagePullPolicy: Always  # 강제로 이미지 다운로드
+          lifecycle:
+            # 내려가기 전에 5초 기다립니다. Service 목록에서 빠지는 동안 들어온 요청이 끊기지 않게 합니다 (k8s 1.30 이상).
+            preStop:
+              sleep:
+                seconds: 5
           ports:
             - name: http
               containerPort: 5000  # Go 애플리케이션이 열어놓은 포트
@@ -52,6 +67,12 @@ spec:
             # react-nginx 가 실제 사용자 IP 하나만 넘깁니다 (config/nginx.conf).
             - name: TRUSTED_PROXY_CIDRS
               value: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+            # 운영 요약(/api/ops/summary)이 mobile-api-server 상태를 볼 주소 (관리 포트에만 있음).
+            - name: MOBILE_API_SERVER_HEALTH_URL
+              value: "http://mobile-api-server-service:8071/actuator/health/readiness"
+            # 이보다 큰 요청 본문은 413 (/api/ 는 서명하려고 본문 전체를 메모리에 읽음).
+            - name: MAX_REQUEST_BODY_BYTES
+              value: "1048576"
           livenessProbe:
             httpGet:
               path: /healthz

@@ -16,8 +16,10 @@ kubectl apply -f app-secrets.example.yaml
 ## Data Services
 
 ```bash
+kubectl get storageclass          # (default) 표시가 있는 StorageClass 가 있어야 합니다 (아래 참고)
 kubectl apply -f postgres.yaml
 kubectl apply -f postgres-service.yaml
+kubectl apply -f postgres-backup.yaml
 kubectl apply -f redis.yaml
 kubectl apply -f redis-service.yaml
 ```
@@ -32,7 +34,28 @@ Data layer:
 
 PostgreSQL 이미지는 메이저 버전(`postgres:18`)으로 고정합니다. 18 부터는 데이터 위치가 `/var/lib/postgresql` 이라
 볼륨도 그 위치에 붙입니다(예전 위치 `/var/lib/postgresql/data` 에 붙이면 시작을 거부함).
-데이터는 `emptyDir` 이라 Postgres 파드가 다시 뜨면 사라집니다.
+
+### Postgres 영구 저장과 백업 (2026-10-15)
+
+- 데이터는 PVC `postgres-data`(10Gi)에 둡니다. 파드가 다시 떠도 남습니다. 클러스터의 **기본 StorageClass** 를 쓰므로,
+  `kubectl get storageclass` 에 `(default)` 가 없으면 PVC 가 Pending 이고 Postgres 가 뜨지 않습니다
+  (k3s·Docker Desktop 은 기본으로 있고, kubeadm 으로 직접 만든 클러스터는 따로 깔아야 합니다).
+- 매일 03:00(서울) `postgres-backup` CronJob 이 `pg_dumpall` 로 전체를 백업해 PVC `postgres-backup` 에 7일치 둡니다.
+- 백업은 같은 클러스터 저장소에 있어 디스크가 통째로 망가지면 같이 잃습니다. 가끔 밖으로 복사합니다:
+
+```bash
+# 백업 PVC 를 붙인 임시 파드로 꺼내기
+kubectl run backup-reader --rm -i --restart=Never --image=busybox \
+  --overrides='{"spec":{"volumes":[{"name":"b","persistentVolumeClaim":{"claimName":"postgres-backup"}}],"containers":[{"name":"backup-reader","image":"busybox","command":["sleep","300"],"volumeMounts":[{"name":"b","mountPath":"/backup"}]}]}}' &
+kubectl cp backup-reader:/backup ./postgres-backup
+# 지금 바로 백업 한 번
+kubectl create job --from=cronjob/postgres-backup postgres-backup-manual
+```
+
+되살리기 (빈 Postgres 에): `gunzip -c all-YYYYMMDD-HHMM.sql.gz | kubectl exec -i deploy/postgres -- psql -U postgres -d postgres`
+
+10/9 에 한 번 PVC 를 넣었다가 emptyDir 로 되돌린 적이 있습니다 (그때는 k8s 도입이 정해지지 않았음). 기본 StorageClass 가 없는
+테스트 클러스터라 Postgres 가 뜨지 않으면, 그 클러스터에서만 `postgres.yaml` 의 volumes 를 `emptyDir: {}` 로 바꿔 씁니다 (데이터는 사라짐).
 
 ## Core Services
 

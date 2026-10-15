@@ -14,9 +14,12 @@
   - notification-server 매니페스트 (`notification-server*.yaml`), api-gateway 의 `/notify/` 설정, nginx 의 `/notify/` 경로
   - Postgres 이미지 `postgres:18` 고정과 마운트 위치 변경 (`/var/lib/postgresql`)
   - realtime-server → game-server 이름 변경 (`game-server*.yaml`, 이미지 태그 `game-server`, Secret 키 `game-server-api-key`)
-  - mobile-api-server 매니페스트 (`mobile-api-server*.yaml`), api-gateway 의 `/mobile/` 설정, nginx 의 `/mobile/` 경로. Postgres 가 `emptyDir` 라 계정 데이터를 실제로 받기 전에 영구 저장부터 해야 한다
+  - mobile-api-server 매니페스트 (`mobile-api-server*.yaml`), api-gateway 의 `/mobile/` 설정, nginx 의 `/mobile/` 경로
   - 사용자 실제 IP 전달 (아래 "사용자 실제 IP" 참고)
-- Postgres(`emptyDir`)와 Redis(볼륨 없음)는 파드가 다시 뜨면 데이터가 사라진다.
+  - Postgres 영구 저장(PVC `postgres-data`, 기본 StorageClass 필요)과 매일 백업(`postgres-backup.yaml`) — README "Postgres 영구 저장과 백업"
+  - 종료 전 5초 대기(`preStop: sleep`, k8s 1.30 이상): api-gateway·api-server·mobile-api-server·notification-server·react-nginx
+  - api-gateway 를 root 가 아닌 distroless 이미지로 (`runAsNonRoot`, 읽기 전용 루트)
+- Redis(볼륨 없음)는 파드가 다시 뜨면 데이터가 사라진다 (토큰·서명 캐시라 다시 로그인하면 된다).
 
 ## 사용자 실제 IP (2026-10-15 설정)
 
@@ -41,6 +44,6 @@
 
 ## 다시 k8s 를 쓰게 되면 볼 것
 
-- Postgres 영구 저장(PVC·StorageClass)과 백업
+- 기본 StorageClass 가 있는지 (Postgres PVC). 백업을 클러스터 밖으로 옮기는 방법 (지금은 같은 저장소에 7일치)
 - 서버 1대라면: `replicas`·HPA·PDB 를 1대에 맞게 줄일지 (PDB 는 옮겨 갈 노드가 없어 노드 점검(drain)이 멈출 수 있음)
 - 위 "사용자 실제 IP" 의 조건 두 가지

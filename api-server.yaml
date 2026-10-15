@@ -18,6 +18,11 @@ spec:
         - name: api-server
           image: daev681/daev681:api-server  # 빌드된 Docker 이미지 이름
           imagePullPolicy: Always  # 강제로 이미지 다운로드
+          lifecycle:
+            # 내려가기 전에 5초 기다립니다. Service 목록에서 빠지는 동안 들어온 요청이 끊기지 않게 합니다 (k8s 1.30 이상).
+            preStop:
+              sleep:
+                seconds: 5
           ports:
             - name: http
               containerPort: 8080  # 애플리케이션이 열어놓은 포트
