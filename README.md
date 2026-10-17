@@ -24,6 +24,22 @@ kubectl apply -f app-secrets.example.yaml
   api-gateway 가 판단한 사용자 IP(`TRUSTED_PROXY_CIDRS`)로 세므로, react-nginx 의 realip 설정과 ingress 의 `externalTrafficPolicy: Local` 이 맞아야 합니다
   (안 맞으면 모든 사용자가 같은 IP 로 보여 한 사람의 실패가 모두를 잠급니다).
 
+## 내부망 제한·DB·Redis 비밀번호 (2026-10-17)
+
+- **NetworkPolicy**: 클러스터 안의 파드 하나가 뚫려도 api-server·Redis·Postgres 에 바로 붙지 못하게 합니다.
+  - `api-server-networkpolicy.yaml`: api-gateway·game-server·prometheus 만
+  - `redis-networkpolicy.yaml`: api-server 만
+  - `postgres-networkpolicy.yaml`: api-server·notification-server(worker)·mobile-api-server, 그리고 `role: postgres-admin` 라벨의 DB 초기화 Job·백업 CronJob
+  - **DB 나 Redis 를 쓰는 서버를 새로 더하면 이 정책에도 더해야** 붙을 수 있습니다. NetworkPolicy 를 지키는 CNI 여야 효과가 있습니다.
+- **비밀번호를 Secret 으로**: `app-secrets` 의 `postgres-password`(Postgres 관리자 계정, 예전에는 매니페스트에 `postgres` 로 적혀 있었음),
+  `redis-password`(예전에는 없음). api-server 는 이제 DB·Redis 주소와 비밀번호를 환경변수로 받습니다 (예전 매니페스트에는 없어서 prod 로 시작하지 못했음).
+- **이미 만든 Postgres 의 비밀번호 바꾸기**: `POSTGRES_PASSWORD` 는 비어 있는 데이터 폴더를 처음 만들 때만 쓰입니다. 이미 있는 DB 는 먼저 바꾼 뒤 Secret 을 맞춥니다.
+  ```bash
+  kubectl exec deploy/postgres -- psql -U postgres -c "ALTER USER postgres PASSWORD '<새 비밀번호>'"
+  # app-secrets 의 postgres-password 를 같은 값으로 바꾸고 api-server·postgres-backup 등을 다시 띄움
+  ```
+- 적용 순서: Secret → `redis.yaml`·`postgres.yaml` → `*-networkpolicy.yaml` → `api-server.yaml`.
+
 ## Images (2026-10-15)
 
 각 저장소의 GitHub Actions(`.github/workflows/ci.yml`)가 main/master 에 올라온 코드로 이미지를 만들어 Docker Hub `daev681/daev681` 에 올립니다.
@@ -237,3 +253,6 @@ api-gateway는 운영 요약(`/api/ops/summary`)에 게임 서버 상태를 합�
 4. `game-server-networkpolicy.yaml`: game-server ingress/egress 허용 범위 제한
 5. `notification-server-networkpolicy.yaml`: notification-server 는 api-gateway 에서 오는 요청만 받음
 6. `mobile-api-server-networkpolicy.yaml`: 앱 API 는 api-gateway 에서만, 관리 포트는 prometheus 에서만 받음
+7. `api-server-networkpolicy.yaml`: api-gateway·game-server·prometheus 에서만
+8. `redis-networkpolicy.yaml`: api-server 에서만
+9. `postgres-networkpolicy.yaml`: DB 를 쓰는 서버와 `role: postgres-admin`(DB 초기화 Job·백업)에서만

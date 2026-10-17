@@ -11,6 +11,10 @@ spec:
   backoffLimit: 10
   ttlSecondsAfterFinished: 3600
   template:
+    metadata:
+      labels:
+        # postgres-networkpolicy.yaml 이 이 라벨의 파드만 Postgres 에 붙게 합니다.
+        role: postgres-admin
     spec:
       restartPolicy: OnFailure
       containers:
@@ -24,9 +28,12 @@ spec:
               value: postgres
             - name: PGUSER
               value: postgres
-            # postgres.yaml 의 POSTGRES_PASSWORD 와 같아야 합니다.
+            # postgres.yaml 의 POSTGRES_PASSWORD 와 같은 Secret 값입니다.
             - name: PGPASSWORD
-              value: postgres
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: postgres-password
             - name: NOTIFICATION_DB_PASSWORD
               valueFrom:
                 secretKeyRef:

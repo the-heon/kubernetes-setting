@@ -1,0 +1,21 @@
+# Redis 에는 api-server 만 붙습니다 (로그인 토큰 목록·요청 nonce·로그인 실패 횟수·IP 차단).
+# 예전에는 클러스터 안의 어느 파드든 붙을 수 있어서, 파드 하나가 뚫리면 모두 로그아웃시키거나
+# 로그인 잠금을 풀거나 IP 차단을 지울 수 있었습니다. 비밀번호(redis.yaml 의 --requirepass)와 함께 씁니다.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-networkpolicy
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-server
+      ports:
+        - protocol: TCP
+          port: 6379
