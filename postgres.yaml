@@ -40,8 +40,13 @@ spec:
           env:
             - name: POSTGRES_USER
               value: postgres
+            # 비어 있는 데이터 폴더를 처음 만들 때만 쓰입니다. 이미 만든 DB 는 이 값을 바꿔도 비밀번호가 바뀌지 않습니다
+            # (README 의 "DB·Redis 비밀번호" 참고).
             - name: POSTGRES_PASSWORD
-              value: postgres
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: postgres-password
             - name: POSTGRES_DB
               value: game_platform
           ports:

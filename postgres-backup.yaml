@@ -27,6 +27,10 @@ spec:
     spec:
       backoffLimit: 2
       template:
+        metadata:
+          labels:
+            # postgres-networkpolicy.yaml 이 이 라벨의 파드만 Postgres 에 붙게 합니다.
+            role: postgres-admin
         spec:
           restartPolicy: OnFailure
           containers:
@@ -38,9 +42,12 @@ spec:
                   value: postgres-service
                 - name: PGUSER
                   value: postgres
-                # postgres.yaml 의 POSTGRES_PASSWORD 와 같아야 합니다.
+                # postgres.yaml 의 POSTGRES_PASSWORD 와 같은 Secret 값입니다.
                 - name: PGPASSWORD
-                  value: postgres
+                  valueFrom:
+                    secretKeyRef:
+                      name: app-secrets
+                      key: postgres-password
               # pipefail: pg_dumpall 이 실패하면 gzip 이 성공해도 실패로 본다 (sh 는 이걸 못 해서 bash 를 쓴다).
               command: ["bash", "-c"]
               args:

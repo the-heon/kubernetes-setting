@@ -18,7 +18,15 @@ spec:
         - name: redis
           image: redis:latest
           imagePullPolicy: IfNotPresent
-          args: ["--appendonly", "yes"]
+          # 비밀번호를 겁니다. 예전에는 없어서 클러스터 안의 어느 파드든 붙어 로그인 토큰·로그인 실패 횟수·IP 차단을 바꿀 수 있었습니다.
+          # (redis-networkpolicy.yaml 로 api-server 만 붙게 막는 것과 함께 씁니다.)
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: redis-password
+          args: ["--appendonly", "yes", "--requirepass", "$(REDIS_PASSWORD)"]
           ports:
             - name: redis
               containerPort: 6379
