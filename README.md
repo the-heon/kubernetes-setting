@@ -13,6 +13,17 @@
 kubectl apply -f app-secrets.example.yaml
 ```
 
+## api-server 보안 설정 (2026-10-17)
+
+- **비밀값 32바이트 이상**: `gateway-secret-key`(= `hmac-secret`), `jwt-secret`, `jwt-refresh-secret` 이 짧으면 api-gateway·api-server 가 시작하지 않습니다.
+- **첫 관리자**: 운영 DB 에는 개발용 관리자(`admin@naver.com`)를 만들지 않습니다. 첫 배포 때 `app-secrets` 의
+  `initial-admin-email`·`initial-admin-password`(12자 이상) 를 넣으면, 관리자가 한 명도 없을 때만 그 계정을 관리자로 만듭니다.
+  만든 뒤에는 두 키를 지워도 됩니다. 이 변경 전에 띄운 DB 에 `admin@naver.com` 이 기본 비밀번호 그대로 있으면 api-server 가 ERROR 로그로 알립니다.
+- **배포하면 로그인이 한 번 풀립니다**: 토큰을 Redis 에 지문(SHA-256)으로 저장하도록 바뀌어, 예전에 받은 토큰은 통과하지 못합니다.
+- **로그인 잠금 기본 켜짐**: 같은 IP 에서 5번 틀리면 그 IP 에서 15분, 모든 IP 를 합쳐 50번이면 계정 전체를 잠급니다 (보안정책 화면에서 조정).
+  api-gateway 가 판단한 사용자 IP(`TRUSTED_PROXY_CIDRS`)로 세므로, react-nginx 의 realip 설정과 ingress 의 `externalTrafficPolicy: Local` 이 맞아야 합니다
+  (안 맞으면 모든 사용자가 같은 IP 로 보여 한 사람의 실패가 모두를 잠급니다).
+
 ## Images (2026-10-15)
 
 각 저장소의 GitHub Actions(`.github/workflows/ci.yml`)가 main/master 에 올라온 코드로 이미지를 만들어 Docker Hub `daev681/daev681` 에 올립니다.

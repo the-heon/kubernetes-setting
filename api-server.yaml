@@ -44,6 +44,20 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: jwt-refresh-secret
+            # 첫 관리자 계정. 관리자가 한 명도 없을 때만 만들고, 이미 있으면 무시합니다 (api-server InitialAdminInitializer).
+            # 첫 배포 뒤에는 Secret 에서 지워도 됩니다. 운영 DB 에는 개발용 관리자(admin@naver.com)를 만들지 않습니다.
+            - name: INITIAL_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: initial-admin-email
+                  optional: true
+            - name: INITIAL_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: initial-admin-password
+                  optional: true
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
