@@ -14,6 +14,10 @@ spec:
       labels:
         app: api-server
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001  # 이미지(Dockerfile)의 사용자
+        runAsGroup: 10001
       containers:
         - name: api-server
           image: daev681/daev681:api-server  # 빌드된 Docker 이미지 이름
@@ -77,6 +81,15 @@ spec:
                   name: app-secrets
                   key: initial-admin-password
                   optional: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            # 루트 파일시스템은 읽기 전용이라, Tomcat·JVM 이 쓰는 임시 파일만 여기에 씁니다.
+            - name: tmp
+              mountPath: /tmp
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
@@ -93,5 +106,8 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
+      volumes:
+        - name: tmp
+          emptyDir: {}
       imagePullSecrets:
         - name: my-secret  # 시크릿 이름을 여기에 지정
